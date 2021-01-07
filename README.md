@@ -1,0 +1,1 @@
+# GenericForeignKey and query filtering

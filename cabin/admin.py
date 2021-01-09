@@ -34,7 +34,7 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Ride)
 class RideAdmin(admin.ModelAdmin):
-    list_display = ('name', 'pickup_time', 'dropoff_time', 'car', 'request',)
+    list_display = ('name', 'request', 'pickup_time', 'dropoff_time', 'car',)
 
 
 @admin.register(Payment)

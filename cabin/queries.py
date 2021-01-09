@@ -41,15 +41,17 @@ def query_3(t):
 
 
 def query_4(x, y, r):
-    drivers = Driver.objects.all()
-    available_drivers_pk = list()
-    for driver in drivers:
-        if driver.active:
-            distance = ((driver.x - x) ** 2 + (driver.y - y) ** 2) ** 0.5
-            if distance < r:
-                available_drivers_pk.append(driver.pk)
-    available_drivers = Driver.objects.filter(pk__in=available_drivers_pk)
-    return available_drivers
+    q = Driver.objects.annotate(distance=((F('x') - x) ** 2 + (F('y') - y) ** 2) ** 0.5). \
+        filter(distance__lt=r, active=True)
+    # drivers = Driver.objects.all()
+    # available_drivers_pk = list()
+    # for driver in drivers:
+    #     if driver.active:
+    #         distance = ((driver.x - x) ** 2 + (driver.y - y) ** 2) ** 0.5
+    #         if distance < r:
+    #             available_drivers_pk.append(driver.pk)
+    # available_drivers = Driver.objects.filter(pk__in=available_drivers_pk)
+    return q
 
 
 def query_5(n, c):
@@ -69,6 +71,10 @@ def query_5(n, c):
 
 
 def query_6(x, t):
+    q = Rider.objects.annotate(total_payments=Sum('riderequest__ride__payment__amount'),
+                               total_rides=Count('riderequest__ride')) \
+        .filter(total_payments__gt=t, total_rides__gte=x)
+
     riders = Rider.objects.all()
     q_pk = list()
     for rider in riders:
@@ -78,23 +84,35 @@ def query_6(x, t):
         payments = Payment.objects.filter(ride__in=rides)
         payments_sum = sum([payment.amount for payment in payments])
         if rides_count >= x and payments_sum > t:
-            q_pk.append(rider)
+            q_pk.append(rider.id)
     q = Rider.objects.filter(pk__in=q_pk)
 
     return q
 
 
 def query_7():
+    # q = Driver.objects.filter(car__ride__request__rider = F('account__first_name'))
+    # for b in q:
+    #     print('**** ', b, b.equal_names)
     drivers = Driver.objects.all()
+    print(drivers)
     drivers_pk = list()
     for driver in drivers:
         cars = Car.objects.filter(owner=driver)
         rides = Ride.objects.filter(car__in=cars)
         for ride in rides:
-            if ride.request.rider.account.first_name == driver.account.first_name:
+            print(ride.request.rider, ride)
+            rider_ct = ContentType.objects.get_for_model(ride.request.rider)
+            rider_first_name = Account.objects.filter(content_type=rider_ct,
+                                                      object_id=ride.request.rider.id).first().first_name
+            driver_ct = ContentType.objects.get_for_model(driver)
+            driver_first_name = Account.objects.filter(content_type=driver_ct, object_id=driver.id).first().first_name
+            print(f'**** {driver_first_name} | {rider_first_name}')
+            if rider_first_name == driver_first_name:
                 drivers_pk.append(driver.pk)
     drivers_pk = set(drivers_pk)
     q = Driver.objects.filter(pk__in=drivers_pk)
+    print(q)
     return q
 
 

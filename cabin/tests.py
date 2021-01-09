@@ -8,7 +8,7 @@ class SampleTests(TestCase):
 
     def test_1(self):
         q = queries.query_1(2)
-        self.assertEqual(q['payment_sum'], 26000)
+        self.assertEqual(q['payment_sum'], 47000)
 
         q = queries.query_1(3)
         self.assertEqual(q['payment_sum'], 24000)
@@ -87,3 +87,10 @@ class SampleTests(TestCase):
         for i in q:
             q_list.append(i.id)
         self.assertEqual(sorted(q_list), [3, 5])
+
+    def test_6(self):
+        q = queries.query_6(1, 1)
+
+    def test_7(self):
+        q = queries.query_7()
+

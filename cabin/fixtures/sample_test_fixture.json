@@ -429,5 +429,14 @@
       "amount": 26000.0,
       "status": 0
     }
+  },
+    {
+    "model": "cabin.payment",
+    "pk": 5,
+    "fields": {
+      "ride": 5,
+      "amount": 21000.0,
+      "status": 0
+    }
   }
 ]

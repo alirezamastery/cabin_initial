@@ -1,3 +1,4 @@
+from django.db.models import Q, Count
 from cabin.models import *
 from django.db.models.query import QuerySet
 
@@ -49,16 +50,18 @@ def query_4(x, y, r):
 
 
 def query_5(n, c):
-    drivers = Driver.objects.all()
-    q_pk = list()
-    for driver in drivers:
-        cars = Car.objects.filter(owner=driver)
-        rides = Ride.objects.filter(car__in=cars)
-        if rides.count() >= n:
-            if driver.car_set.filter(car_type='A').count() > 0 or \
-                    driver.car_set.filter(color=c).count() > 0:
-                q_pk.append(driver.pk)
-    q = Driver.objects.filter(pk__in=q_pk)
+    q = Driver.objects.annotate(num_rides=Count('car__ride', distinct=True)) \
+        .filter(Q(car__car_type='A') | Q(car__color=c), num_rides__gte=n)  # better way to do this query
+    # drivers = Driver.objects.all()
+    # q_pk = list()
+    # for driver in drivers:
+    #     cars = Car.objects.filter(owner=driver)
+    #     rides = Ride.objects.filter(car__in=cars)
+    #     if rides.count() >= n:
+    #         if driver.car_set.filter(car_type='A').count() > 0 or \
+    #                 driver.car_set.filter(color=c).count() > 0:
+    #             q_pk.append(driver.pk)
+    # q = Driver.objects.filter(pk__in=q_pk)
     return q
 
 

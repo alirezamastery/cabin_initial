@@ -1,4 +1,4 @@
-from django.db.models import Q, Count
+from django.db.models import Q, F, Count, Sum
 from cabin.models import *
 from django.db.models.query import QuerySet
 
@@ -9,32 +9,35 @@ def query_0(x):
 
 
 def query_1(x):
-    driver = Driver.objects.get(pk=x)
-    cars = Car.objects.filter(owner=driver)
-    rides = Ride.objects.filter(car__in=cars)
-    payments = Payment.objects.filter(ride__in=rides)
-    if payments.count() == 0:
-        return {'payment_sum': None}
-    value = sum([payment.amount for payment in payments])
-    return {'payment_sum': value}
+    q = Driver.objects.get(pk=x).car_set.aggregate(payment_sum=Sum('ride__payment__amount'))  # a better way
+    # driver = Driver.objects.get(pk=x)
+    # cars = Car.objects.filter(owner=driver)
+    # rides = Ride.objects.filter(car__in=cars)
+    # payments = Payment.objects.filter(ride__in=rides)
+    # if payments.count() == 0:
+    #     return {'payment_sum': None}
+    # value = sum([payment.amount for payment in payments])
+    return q
 
 
 def query_2(x):
-    rider = Rider.objects.get(pk=x)
-    ride_requests = RideRequest.objects.filter(rider=rider)
-    rides = Ride.objects.filter(request__in=ride_requests)
+    q = Ride.objects.filter(request__rider_id=x)  # a better way
+    # rider = Rider.objects.get(pk=x)
+    # ride_requests = RideRequest.objects.filter(rider=rider)
+    # rides = Ride.objects.filter(request__in=ride_requests)
 
-    return rides
+    return q
 
 
 def query_3(t):
-    count = 0
-    rides = Ride.objects.all()
-    for ride in rides:
-        if ride.dropoff_time - ride.pickup_time > t:
-            count += 1
+    q = Ride.objects.annotate(travel_time=F('dropoff_time') - F('pickup_time')).filter(travel_time__gt=t).count()
+    # count = 0
+    # rides = Ride.objects.all()
+    # for ride in rides:
+    #     if ride.dropoff_time - ride.pickup_time > t:
+    #         count += 1
 
-    return count
+    return q
 
 
 def query_4(x, y, r):

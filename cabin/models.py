@@ -45,6 +45,7 @@ class Driver(models.Model):
     x = models.FloatField()
     y = models.FloatField()
     active = models.BooleanField(default=False)
+
     @property
     def name(self):
         return f'{self}'

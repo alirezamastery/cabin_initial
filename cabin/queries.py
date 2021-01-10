@@ -75,58 +75,84 @@ def query_6(x, t):
                                total_rides=Count('riderequest__ride')) \
         .filter(total_payments__gt=t, total_rides__gte=x)
 
-    riders = Rider.objects.all()
-    q_pk = list()
-    for rider in riders:
-        ride_requests = RideRequest.objects.filter(rider=rider)
-        rides = Ride.objects.filter(request__in=ride_requests)
-        rides_count = rides.count()
-        payments = Payment.objects.filter(ride__in=rides)
-        payments_sum = sum([payment.amount for payment in payments])
-        if rides_count >= x and payments_sum > t:
-            q_pk.append(rider.id)
-    q = Rider.objects.filter(pk__in=q_pk)
+    # riders = Rider.objects.all()
+    # q_pk = list()
+    # for rider in riders:
+    #     ride_requests = RideRequest.objects.filter(rider=rider)
+    #     rides = Ride.objects.filter(request__in=ride_requests)
+    #     rides_count = rides.count()
+    #     payments = Payment.objects.filter(ride__in=rides)
+    #     payments_sum = sum([payment.amount for payment in payments])
+    #     if rides_count >= x and payments_sum > t:
+    #         q_pk.append(rider.id)
+    # q = Rider.objects.filter(pk__in=q_pk)
 
     return q
 
 
 def query_7():
-    # q = Driver.objects.filter(car__ride__request__rider = F('account__first_name'))
-    # for b in q:
-    #     print('**** ', b, b.equal_names)
-    drivers = Driver.objects.all()
-    print(drivers)
-    drivers_pk = list()
-    for driver in drivers:
-        cars = Car.objects.filter(owner=driver)
-        rides = Ride.objects.filter(car__in=cars)
-        for ride in rides:
-            print(ride.request.rider, ride)
-            rider_ct = ContentType.objects.get_for_model(ride.request.rider)
-            rider_first_name = Account.objects.filter(content_type=rider_ct,
-                                                      object_id=ride.request.rider.id).first().first_name
-            driver_ct = ContentType.objects.get_for_model(driver)
-            driver_first_name = Account.objects.filter(content_type=driver_ct, object_id=driver.id).first().first_name
-            print(f'**** {driver_first_name} | {rider_first_name}')
-            if rider_first_name == driver_first_name:
-                drivers_pk.append(driver.pk)
-    drivers_pk = set(drivers_pk)
-    q = Driver.objects.filter(pk__in=drivers_pk)
+    q = Driver.objects.annotate(
+            d_first_name=F('account__first_name'),
+            ride_obj=F('car__ride__request__rider__account__first_name')  # you can go deep apparently
+    ).filter(d_first_name=F('ride_obj'))
     print(q)
+    for b in q:
+        print('**** ', b.d_first_name, b.ride_obj)
+    # drivers = Driver.objects.all()
+    # print(drivers)
+    # drivers_pk = list()
+    # for driver in drivers:
+    #     print(f'--- {driver}')
+    #     cars = Car.objects.filter(owner=driver)
+    #     rides = Ride.objects.filter(car__in=cars)
+    #     for ride in rides:
+    #         print(ride.request.rider, ride)
+    #
+    #         # GenericForeignKey query:
+    #         d_first_name = driver.account.get(object_id=driver.pk).first_name  # with get()
+    #         r_first_name = ride.request.rider.account.first().first_name  # with filter() or first()
+    #         print(f'----- {d_first_name} | {r_first_name}')
+    #
+    #         # Reverse relations:
+    #         # 1- if GenericRelation field was NOT used in related models to "Account" you can
+    #         # use this method to query database:
+    #         rider_ct = ContentType.objects.get_for_model(ride.request.rider)
+    #         rider_first_name = Account.objects.filter(content_type=rider_ct,
+    #                                                   object_id=ride.request.rider.pk).first().first_name
+    #         driver_ct = ContentType.objects.get_for_model(driver)
+    #         driver_first_name = Account.objects.filter(content_type=driver_ct, object_id=driver.pk).first().first_name
+    #         print(f'----- {driver_first_name} | {rider_first_name}')
+    #         # 2- this method can be used when GenericRelation field is specified in related models to "Account"
+    #         driver_account = Account.objects.get(drivers__pk=driver.pk)  # get() also works!
+    #         rider_account = Account.objects.filter(riders__pk=ride.request.rider.pk).first()
+    #         print(f'----- {driver_account.first_name} | {rider_account.first_name}')
+    #         if rider_first_name == driver_first_name:
+    #             drivers_pk.append(driver.pk)
+    #
+    # drivers_pk = set(drivers_pk)
+    # q = Driver.objects.filter(pk__in=drivers_pk)
+    # print(q)
     return q
 
 
 def query_8():
+    # q =
+
     drivers = Driver.objects.all()
     q = list()
     for driver in drivers:
         cars = Car.objects.filter(owner=driver)
         rides = Ride.objects.filter(car__in=cars)
         ride_count = 0
+        print(f'--- {driver}')
         for ride in rides:
-            if ride.request.rider.account.last_name == driver.account.last_name:
+            driver_account = Account.objects.get(drivers__pk=driver.pk)
+            rider_account = Account.objects.get(riders__pk=ride.request.rider.pk)
+            print(f'----- {driver_account.last_name} | {rider_account.last_name}')
+            if driver_account.last_name == rider_account.last_name:
                 ride_count += 1
         q.append({'id': driver.pk, 'n': ride_count})
+    print(q)
     return q
 
 

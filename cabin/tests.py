@@ -94,3 +94,5 @@ class SampleTests(TestCase):
     def test_7(self):
         q = queries.query_7()
 
+    # def test_8(self):
+    #     q = queries.query_8()

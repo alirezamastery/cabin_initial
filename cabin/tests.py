@@ -91,8 +91,11 @@ class SampleTests(TestCase):
     def test_6(self):
         q = queries.query_6(1, 1)
 
-    def test_7(self):
-        q = queries.query_7()
+    # def test_7(self):
+    #     q = queries.query_7()
 
     # def test_8(self):
     #     q = queries.query_8()
+
+    def test_9(self):
+        q = queries.query_9(1393 , 10000)

@@ -1,4 +1,4 @@
-from django.db.models import Q, F, Count, Sum
+from django.db.models import Q, F, Count, Sum, Case, When, IntegerField
 from cabin.models import *
 from django.db.models.query import QuerySet
 
@@ -136,37 +136,53 @@ def query_7():
 
 
 def query_8():
-    # q =
+    q = Driver.objects.annotate(d_last_name=F('account__first_name'),
+                                r_last_name=F('car__ride__request__rider__account__last_name')) \
+        .annotate(occur_count=Count(Case(When(d_last_name=F('r_last_name'), then=1),
+                                         output_field=IntegerField()
+                                         ))
+                  )
+    for b in q:
+        print('**** ', b, b.occur_count)
 
-    drivers = Driver.objects.all()
-    q = list()
-    for driver in drivers:
-        cars = Car.objects.filter(owner=driver)
-        rides = Ride.objects.filter(car__in=cars)
-        ride_count = 0
-        print(f'--- {driver}')
-        for ride in rides:
-            driver_account = Account.objects.get(drivers__pk=driver.pk)
-            rider_account = Account.objects.get(riders__pk=ride.request.rider.pk)
-            print(f'----- {driver_account.last_name} | {rider_account.last_name}')
-            if driver_account.last_name == rider_account.last_name:
-                ride_count += 1
-        q.append({'id': driver.pk, 'n': ride_count})
-    print(q)
+    # drivers = Driver.objects.all()
+    # q = list()
+    # for driver in drivers:
+    #     cars = Car.objects.filter(owner=driver)
+    #     rides = Ride.objects.filter(car__in=cars)
+    #     ride_count = 0
+    #     print(f'--- {driver}')
+    #     for ride in rides:
+    #         driver_account = Account.objects.get(drivers__pk=driver.pk)
+    #         rider_account = Account.objects.get(riders__pk=ride.request.rider.pk)
+    #         print(f'----- {driver_account.last_name} | {rider_account.last_name}')
+    #         if driver_account.last_name == rider_account.last_name:
+    #             ride_count += 1
+    #     q.append({'id': driver.pk, 'n': ride_count})
+    # print(q)
     return q
 
 
 def query_9(n, t):
-    drivers = Driver.objects.all()
-    q = list()
-    for driver in drivers:
-        driver_cars = Car.objects.filter(driver=driver)
-        rides = Ride.objects.filter(car__in=driver_cars)
-        rides_count = 0
-        for ride in rides:
-            if ride.car.model > 2 and ride.dropoff_time - ride.pickup_time > t:
-                rides_count += 1
-        q.append({'id': driver.pk, 'n': rides_count})
+    q = Driver.objects.annotate(car_model=F('car__model'),
+                                ride_duration=F('car__ride__dropoff_time') - F('car__ride__pickup_time')) \
+        .annotate(occur_count=Count(Case(When(car_model__gt=n, ride_duration__gt=t, then=1),
+                                         output_field=IntegerField()
+                                         ))
+                  )
+    for b in q:
+        print('**** ', b, b.car_model, b.ride_duration , b.occur_count)
+
+    # drivers = Driver.objects.all()
+    # q = list()
+    # for driver in drivers:
+    #     driver_cars = Car.objects.filter(driver=driver)
+    #     rides = Ride.objects.filter(car__in=driver_cars)
+    #     rides_count = 0
+    #     for ride in rides:
+    #         if ride.car.model > 2 and ride.dropoff_time - ride.pickup_time > t:
+    #             rides_count += 1
+    #     q.append({'id': driver.pk, 'n': rides_count})
 
     return q
 
